@@ -14,16 +14,29 @@ public class AppClient
     System.out.println("Linia : " + app.getLineWithShortestDistance());
   }
 
-  private final String filename;
-  private final String pattern;
-  private int minDistance = Integer.MAX_VALUE;
-  private Levenshtein[] levenshteins;
-
   private AppClient(final String filename, final String pattern)
   {
     this.filename = filename;
     this.pattern = prepareString(pattern);
     levenshteins = getLevenshteins(this.pattern);
+  }
+  
+  private final String filename;
+  private final String pattern;
+  private int minDistance = Integer.MAX_VALUE;
+  private int minDistanceLine = Integer.MAX_VALUE;
+  private Levenshtein[] levenshteins;
+
+  private class Line
+  {
+	Line(final int number, final String str)
+	{
+	  this.number = number;
+	  this.str = str;
+	}
+		  
+    int number;
+	String str = "";
   }
 
   private String prepareString(final String str)
@@ -84,31 +97,36 @@ public class AppClient
   {
     try (BufferedReader br = new BufferedReader(new FileReader(filename)))
     {
+	  int idx = 1;
       for (String line; (line = br.readLine()) != null;)
       {
-        processLine(line);
+        processLine(new Line(idx, line));
+		++idx;
       }
     } catch (Exception e)
     {
       System.out.println("Exception during file parsing!");
     }
     
-    return minDistance;
+    return minDistanceLine;
   }
 
-  private void processLine(String line)
+  private void processLine(Line line)
   {
-    if (null == line || "" == line )
+    if (null == line.str || "" == line.str )
       return;
     
-    line = prepareString(line);
+    line.str = prepareString(line.str);
     
     for (int i = 0; i < levenshteins.length; ++i)
     {
       final int newDistance = 
-        levenshteins[i].calculateDistance(line, minDistance);
+        levenshteins[i].calculateDistance(line.str, minDistance);
       
       minDistance = Math.min(minDistance, newDistance);
+	  
+	  if (newDistance == minDistance)
+	    minDistanceLine = line.number;
     }
   }
 }
